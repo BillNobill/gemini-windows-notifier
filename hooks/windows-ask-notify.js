@@ -5,6 +5,8 @@ const { execFile } = require('child_process');
  * Hook de Alerta para Windows (Perguntas e Permissões)
  */
 
+const SHOW_ICON = false;
+
 let input = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
@@ -50,17 +52,18 @@ process.stdin.on('end', () => {
             return;
         }
 
+        const iconTag = SHOW_ICON ? `<image placement="appLogoOverride" src="file:///${logoPath.replace(/\\/g, '/')}" />` : '';
+
         const psScript = `
             [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
             [void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]
             $title = "${notificationTitle.replace(/"/g, '`"')}"
             $text = "${notificationText.replace(/"/g, '`"')}"
-            $logo = "${logoPath.replace(/\\/g, '/')}"
             $template = @"
 <toast duration="long">
     <visual>
         <binding template="ToastGeneric">
-            <image placement="appLogoOverride" src="file:///$logo" />
+            ${iconTag}
             <text>$title</text>
             <text>$text</text>
         </binding>

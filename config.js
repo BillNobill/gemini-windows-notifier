@@ -15,16 +15,15 @@ function error(msg) { console.error(`[ERROR] ${msg}`); process.exit(1); }
 
 const args = process.argv.slice(2);
 const thresholdArg = args.find(a => a.startsWith('--threshold='));
+const iconArg = args.find(a => a.startsWith('--icon='));
 
-if (!thresholdArg) {
-    console.log('Usage: node config.js --threshold=[seconds]');
-    console.log('Example: node config.js --threshold=10');
+if (!thresholdArg && !iconArg) {
+    console.log('Usage: node config.js [options]');
+    console.log('Options:');
+    console.log('  --threshold=[seconds]  Set minimum duration for notifications');
+    console.log('  --icon=[on|off]        Enable or disable notification icon');
+    console.log('\nExample: node config.js --threshold=10 --icon=on');
     process.exit(0);
-}
-
-const newThreshold = parseInt(thresholdArg.split('=')[1]);
-if (isNaN(newThreshold) || newThreshold < 0) {
-    error('Invalid threshold value. Please provide a positive number.');
 }
 
 async function updateConfig() {
@@ -35,45 +34,38 @@ async function updateConfig() {
     log(`Creating backup at ${BACKUP_PATH}...`);
     fs.copyFileSync(SETTINGS_PATH, BACKUP_PATH);
 
-    let settings;
-    try {
-        const content = fs.readFileSync(SETTINGS_PATH, 'utf8');
-        settings = JSON.parse(content);
-    } catch (e) {
-        error(`Failed to parse settings.json: ${e.message}`);
-    }
-
-    if (!settings.hooks || !settings.hooks.AfterAgent) {
-        error('Notifier hooks not found in settings.json. Please run the installer first.');
-    }
-
-    let updated = false;
-    
-    // Find our specific hook and update the THRESHOLD_SECONDS variable in the script if it exists,
-    // or just pass it as an environment variable or argument.
-    // However, the cleanest way without changing the scripts too much is to update the threshold
-    // inside the windows-notify.js file itself or passed as an argument.
-    
-    // Let's update the threshold value directly in the windows-notify.js file for simplicity
     const hooksDir = path.join(os.homedir(), '.gemini', 'hooks');
-    const notifyScriptPath = path.join(hooksDir, 'windows-notify.js');
+    const scripts = ['windows-notify.js', 'windows-ask-notify.js'];
+    let anyUpdated = false;
 
-    if (fs.existsSync(notifyScriptPath)) {
-        log(`Updating threshold to ${newThreshold}s in windows-notify.js...`);
-        let scriptContent = fs.readFileSync(notifyScriptPath, 'utf8');
-        const updatedContent = scriptContent.replace(/const THRESHOLD_SECONDS = \d+;/, `const THRESHOLD_SECONDS = ${newThreshold};`);
-        
-        if (scriptContent !== updatedContent) {
-            fs.writeFileSync(notifyScriptPath, updatedContent);
-            updated = true;
-        } else {
-            log('Threshold already set to this value or pattern not found.');
+    for (const scriptName of scripts) {
+        const scriptPath = path.join(hooksDir, scriptName);
+        if (!fs.existsSync(scriptPath)) continue;
+
+        let content = fs.readFileSync(scriptPath, 'utf8');
+        let newContent = content;
+
+        if (thresholdArg && scriptName === 'windows-notify.js') {
+            const newThreshold = parseInt(thresholdArg.split('=')[1]);
+            if (!isNaN(newThreshold)) {
+                log(`Updating threshold to ${newThreshold}s in ${scriptName}...`);
+                newContent = newContent.replace(/const THRESHOLD_SECONDS = \d+;/, `const THRESHOLD_SECONDS = ${newThreshold};`);
+            }
         }
-    } else {
-        error('Notification script not found in hooks directory.');
+
+        if (iconArg) {
+            const val = iconArg.split('=')[1] === 'on' ? 'true' : 'false';
+            log(`Setting icon to ${val} in ${scriptName}...`);
+            newContent = newContent.replace(/const SHOW_ICON = (true|false);/, `const SHOW_ICON = ${val};`);
+        }
+
+        if (content !== newContent) {
+            fs.writeFileSync(scriptPath, newContent);
+            anyUpdated = true;
+        }
     }
 
-    if (updated) {
+    if (anyUpdated) {
         log('Configuration updated successfully!');
     } else {
         log('No changes were made.');

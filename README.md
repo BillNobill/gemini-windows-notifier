@@ -48,14 +48,17 @@ node uninstall.js
 
 ## Configuration
 
-You can easily adjust the notification settings using the included configuration utility. By default, the system only notifies for tasks exceeding 5 seconds.
+You can easily adjust the notification settings using the included configuration utility. By default, the system only notifies for tasks exceeding 5 seconds and the brand icon is disabled to maximize text space.
 
-To change the notification threshold:
-```powershell
-node config.js --threshold=10
-```
+### Available Options
+
+| Option | Description | Example |
+| :--- | :--- | :--- |
+| `--threshold=[seconds]` | Set minimum task duration for notifications | `node config.js --threshold=10` |
+| `--icon=[on\|off]` | Enable or disable the Gemini logo in notifications | `node config.js --icon=on` |
+
 > [!TIP]
-> The configuration utility automatically creates a backup of your settings before applying any changes.
+> You can combine options in a single command: `node config.js --threshold=5 --icon=off`
 
 ## Usage & Management
 
