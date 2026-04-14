@@ -47,7 +47,8 @@ process.stdin.on('end', () => {
             const cleanResponse = agentResponse.trim()
                 .replace(/```[\s\S]*?```/g, '[Código]') // Oculta blocos de código
                 .replace(/^#+\s+/gm, '') 
-                .replace(/\*\*|\*/g, '');
+                .replace(/\*\*|\*/g, '')
+                .replace(/\s\s+/g, ' '); // Normaliza múltiplos espaços/quebras em um só
 
             // Tenta achar padrões de conclusão (Summary, Conclusion, Result, etc.)
             const summaryMatch = cleanResponse.match(/(?:Summary|Result|Conclusion|Resumo|Resultado|Conclusão):\s*(.*)/i);

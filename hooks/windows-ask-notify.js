@@ -39,7 +39,9 @@ process.stdin.on('end', () => {
             const firstQuestion = data.tool_input.questions[0].question;
             if (firstQuestion) {
                 notificationTitle = "Gemini: Question";
-                notificationText = firstQuestion.trim().substring(0, 120);
+                notificationText = firstQuestion.trim()
+                    .replace(/\s\s+/g, ' ') // Normaliza espaços
+                    .substring(0, 120);
             }
         } 
         // Pedido de permissão para outras ferramentas
