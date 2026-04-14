@@ -49,21 +49,36 @@ process.stdin.on('end', () => {
             if (agentResponse.length > 100) notificationText += "...";
         }
 
-        const notificationTitle = `Gemini: Finalizada (${Math.round(durationSeconds)}s)`;
+        const isError = data.status === 'error' || 
+                        data.failed === true || 
+                        (agentResponse && /^(Error|Failed|Exception|Falha|Erro):/i.test(agentResponse.trim()));
+
+        let notificationTitle = `Gemini: Finished (${Math.round(durationSeconds)}s)`;
+        let audioSrc = "ms-winsoundevent:Notification.SMS";
+
+        if (isError) {
+            notificationTitle = `Gemini: Task Failed`;
+            audioSrc = "ms-winsoundevent:Notification.Default"; // Som padrão mais curto para erro
+        }
+
+        const logoPath = path.join(os.homedir(), '.gemini', 'assets', 'gemini-logo.png');
 
         const psScript = `
             [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
             [void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]
             $title = "${notificationTitle.replace(/"/g, '`"')}"
             $text = "${notificationText.replace(/"/g, '`"')}"
+            $logo = "${logoPath.replace(/\\/g, '/')}"
             $template = @"
 <toast>
     <visual>
         <binding template="ToastGeneric">
+            <image placement="appLogoOverride" src="file:///$logo" />
             <text>$title</text>
             <text>$text</text>
         </binding>
     </visual>
+    <audio src="${audioSrc}" />
 </toast>
 "@
             $xml = New-Object Windows.Data.Xml.Dom.XmlDocument

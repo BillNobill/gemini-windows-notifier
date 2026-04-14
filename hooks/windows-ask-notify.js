@@ -28,18 +28,22 @@ process.stdin.on('end', () => {
             return;
         }
 
+        const path = require('path');
+        const os = require('os');
+        const logoPath = path.join(os.homedir(), '.gemini', 'assets', 'gemini-logo.png');
+
         // Pergunta direta ao usuário (ask_user)
         if (toolName === 'ask_user' && data.tool_input && data.tool_input.questions) {
             const firstQuestion = data.tool_input.questions[0].question;
             if (firstQuestion) {
-                notificationTitle = "Gemini: Pergunta";
+                notificationTitle = "Gemini: Question";
                 notificationText = firstQuestion.trim().substring(0, 120);
             }
         } 
         // Pedido de permissão para outras ferramentas
         else if (notificationType === 'ToolPermission') {
-            notificationTitle = "Gemini: Permissão";
-            notificationText = `Deseja executar ${toolName || 'ferramenta'}?`;
+            notificationTitle = "Gemini: Permission";
+            notificationText = `Do you want to execute ${toolName || 'tool'}?`;
         }
         else {
             process.stdout.write(JSON.stringify({ decision: "allow" }));
@@ -51,14 +55,17 @@ process.stdin.on('end', () => {
             [void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]
             $title = "${notificationTitle.replace(/"/g, '`"')}"
             $text = "${notificationText.replace(/"/g, '`"')}"
+            $logo = "${logoPath.replace(/\\/g, '/')}"
             $template = @"
 <toast duration="long">
     <visual>
         <binding template="ToastGeneric">
+            <image placement="appLogoOverride" src="file:///$logo" />
             <text>$title</text>
             <text>$text</text>
         </binding>
     </visual>
+    <audio src="ms-winsoundevent:Notification.SMS" />
 </toast>
 "@
             $xml = New-Object Windows.Data.Xml.Dom.XmlDocument

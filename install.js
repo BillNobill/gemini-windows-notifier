@@ -9,6 +9,7 @@ const os = require('os');
 
 const GEMINI_DIR = path.join(os.homedir(), '.gemini');
 const HOOKS_DIR = path.join(GEMINI_DIR, 'hooks');
+const ASSETS_DIR = path.join(GEMINI_DIR, 'assets');
 const SETTINGS_PATH = path.join(GEMINI_DIR, 'settings.json');
 
 const SCRIPTS_TO_COPY = [
@@ -28,10 +29,14 @@ async function setup() {
         error('.gemini directory not found in user home. Is Gemini CLI installed?');
     }
 
-    // 2. Create hooks directory if missing
+    // 2. Create directories if missing
     if (!fs.existsSync(HOOKS_DIR)) {
         log('Creating hooks directory...');
         fs.mkdirSync(HOOKS_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(ASSETS_DIR)) {
+        log('Creating assets directory...');
+        fs.mkdirSync(ASSETS_DIR, { recursive: true });
     }
 
     // 3. Copy scripts
@@ -43,6 +48,16 @@ async function setup() {
             fs.copyFileSync(src, dest);
         } else {
             log(`Warning: ${file} not found in current directory. Skipping.`);
+        }
+    }
+
+    // 3.1 Copy assets
+    log('Copying notification assets...');
+    const srcAssetsDir = path.join(__dirname, 'assets');
+    if (fs.existsSync(srcAssetsDir)) {
+        const assetFiles = fs.readdirSync(srcAssetsDir);
+        for (const file of assetFiles) {
+            fs.copyFileSync(path.join(srcAssetsDir, file), path.join(ASSETS_DIR, file));
         }
     }
 
