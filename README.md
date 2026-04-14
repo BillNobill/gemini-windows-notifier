@@ -8,11 +8,10 @@ This project implements a professional notification system for the [Gemini CLI](
 
 ## Key Features
 
-- **✅ Completion & Failure Alerts**: Native Toast notifications for tasks. Automatically detects execution failures and changes alert sounds/titles accordingly.
-- **❓ Interactive Prompts**: Immediate alerts for `ask_user` tool calls and `ToolPermission` requests.
-- **🖼️ Professional Branding**: High-quality Gemini CLI logo integration in all notifications.
-- **🎵 Native Audio**: Uses Windows native `SMS` notification sound for optimal user experience.
-- **⚙️ CLI Configuration**: Adjust settings like the time threshold directly from your terminal.
+- **Completion & Failure Alerts**: Native Toast notifications for tasks. Automatically detects execution failures and changes alert sounds/titles accordingly.
+- **Interactive Prompts**: Immediate alerts for `ask_user` tool calls and `ToolPermission` requests.
+- **Native Audio**: Uses Windows native `SMS` notification sound for optimal user experience.
+- **CLI Configuration**: Adjust settings like the time threshold directly from your terminal.
 
 ## Installation Guide
 
