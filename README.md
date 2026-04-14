@@ -43,7 +43,8 @@ To remove the hooks and assets from your system:
 ```powershell
 node uninstall.js
 ```
-*This will restore your settings from the latest backup and delete the notification scripts.*
+> [!NOTE]  
+> This operation will restore your `settings.json` from the latest backup and delete the notification scripts from the `.gemini/hooks` directory.
 
 ## Configuration
 
@@ -53,7 +54,8 @@ To change the notification threshold:
 ```powershell
 node config.js --threshold=10
 ```
-*This will create a backup of your settings and update the hooks to only notify for tasks longer than 10 seconds.*
+> [!TIP]
+> The configuration utility automatically creates a backup of your settings before applying any changes.
 
 ## Usage & Management
 
