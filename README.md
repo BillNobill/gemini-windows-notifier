@@ -4,7 +4,7 @@ Integration hooks for Gemini CLI providing native Windows Toast notifications fo
 
 ## Overview
 
-This project implements a professional notification system for the [Gemini CLI](https://github.com/google/gemini-cli) on Windows. It addresses the UX gap in long-running tasks by providing asynchronous alerts when the agent completes an operation or requires user intervention.
+This project implements a professional notification system for the [Gemini CLI](https://geminicli.com) on Windows. It addresses the UX gap in long-running tasks by providing asynchronous alerts when the agent completes an operation or requires user intervention.
 
 ## Key Features
 
