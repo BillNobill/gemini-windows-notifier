@@ -33,10 +33,18 @@ This project implements a professional notification system for the [Gemini CLI](
 ### Option 2: Manual Installation (Terminal)
 
 1. Clone the repository and navigate to the root.
-2. Run the installer:
+3. Run the installer:
    ```powershell
    node install.js
    ```
+
+### Uninstallation
+
+To remove the hooks and assets from your system:
+```powershell
+node uninstall.js
+```
+*This will restore your settings from the latest backup and delete the notification scripts.*
 
 ## Configuration
 

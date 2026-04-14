@@ -40,13 +40,33 @@ process.stdin.on('end', () => {
             return;
         }
 
+        // Lógica de Resumo Inteligente (Smart Summary)
         let notificationText = "Tarefa concluída.";
         if (agentResponse) {
-            notificationText = agentResponse.trim()
+            const cleanResponse = agentResponse.trim()
+                .replace(/```[\s\S]*?```/g, '[Código]') // Oculta blocos de código
                 .replace(/^#+\s+/gm, '') 
-                .replace(/\*\*|\*/g, '')  
-                .substring(0, 100);
-            if (agentResponse.length > 100) notificationText += "...";
+                .replace(/\*\*|\*/g, '');
+
+            // Tenta achar padrões de conclusão (Summary, Conclusion, Result, etc.)
+            const summaryMatch = cleanResponse.match(/(?:Summary|Result|Conclusion|Resumo|Resultado|Conclusão):\s*(.*)/i);
+            
+            if (summaryMatch && summaryMatch[1]) {
+                notificationText = summaryMatch[1].trim();
+            } else {
+                // Caso contrário, tenta pegar as últimas duas frases (que geralmente concluem a tarefa)
+                const sentences = cleanResponse.split(/[.!?]\s+/).filter(s => s.trim().length > 5);
+                if (sentences.length > 1) {
+                    notificationText = sentences.slice(-2).join('. ').trim();
+                } else {
+                    notificationText = cleanResponse.substring(0, 100);
+                }
+            }
+            
+            // Limite final de caracteres para o Toast
+            if (notificationText.length > 110) {
+                notificationText = notificationText.substring(0, 107) + "...";
+            }
         }
 
         const isError = data.status === 'error' || 
