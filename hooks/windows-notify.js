@@ -4,11 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-/**
- * Hook de Notificação para Windows (Pós-Agent)
- * Notifica via Windows Toast quando uma tarefa longa é concluída.
- */
-
 const THRESHOLD_SECONDS = 5;
 
 let input = '';
@@ -25,20 +20,22 @@ process.stdin.on('end', () => {
         const sessionId = data.session_id;
         const agentResponse = data.prompt_response;
 
-        let duration = 0;
+        let durationSeconds = 0;
         if (sessionId) {
             const tempFile = path.join(os.tmpdir(), `gemini-start-${sessionId}.txt`);
             if (fs.existsSync(tempFile)) {
                 try {
-                    const startTime = parseFloat(fs.readFileSync(tempFile, 'utf8'));
-                    const endTime = Date.now() / 1000;
-                    duration = endTime - startTime;
+                    const content = fs.readFileSync(tempFile, 'utf8').trim();
+                    const startTimeMs = BigInt(content);
+                    const endTimeMs = BigInt(Date.now());
+                    durationSeconds = Number(endTimeMs - startTimeMs) / 1000;
                     fs.unlinkSync(tempFile);
                 } catch (e) {}
             }
         }
 
-        if (duration < THRESHOLD_SECONDS) {
+        // Notifica apenas se demorar mais que o threshold ou se não houver timer (teste)
+        if (durationSeconds > 0 && durationSeconds < THRESHOLD_SECONDS) {
             process.stdout.write(JSON.stringify({ decision: "allow" }));
             return;
         }
@@ -48,11 +45,11 @@ process.stdin.on('end', () => {
             notificationText = agentResponse.trim()
                 .replace(/^#+\s+/gm, '') 
                 .replace(/\*\*|\*/g, '')  
-                .substring(0, 120);
-            if (agentResponse.length > 120) notificationText += "...";
+                .substring(0, 100);
+            if (agentResponse.length > 100) notificationText += "...";
         }
 
-        const notificationTitle = `Gemini: Finalizada (${Math.round(duration)}s)`;
+        const notificationTitle = `Gemini: Finalizada (${Math.round(durationSeconds)}s)`;
 
         const psScript = `
             [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
@@ -72,6 +69,7 @@ process.stdin.on('end', () => {
             $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
             $xml.LoadXml($template)
             $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
+            # AppId oficial do PowerShell (mais compatível)
             $appId = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe"
             [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show($toast)
         `;

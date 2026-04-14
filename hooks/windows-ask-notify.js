@@ -3,7 +3,6 @@ const { execFile } = require('child_process');
 
 /**
  * Hook de Alerta para Windows (Perguntas e Permissões)
- * Notifica quando o Gemini CLI está aguardando interação do usuário.
  */
 
 let input = '';
@@ -20,20 +19,27 @@ process.stdin.on('end', () => {
         const toolName = data.tool_name;
         const notificationType = data.notification_type; 
         
-        let notificationTitle = "Gemini: Decisão Pendente";
-        let notificationText = "O Gemini está aguardando sua resposta no terminal.";
+        let notificationTitle = "";
+        let notificationText = "";
 
+        // Se for o pedido de permissão genérico para o ask_user, ignora (para não duplicar)
+        if (notificationType === 'ToolPermission' && toolName === 'ask_user') {
+            process.stdout.write(JSON.stringify({ decision: "allow" }));
+            return;
+        }
+
+        // Pergunta direta ao usuário (ask_user)
         if (toolName === 'ask_user' && data.tool_input && data.tool_input.questions) {
             const firstQuestion = data.tool_input.questions[0].question;
             if (firstQuestion) {
                 notificationTitle = "Gemini: Pergunta";
                 notificationText = firstQuestion.trim().substring(0, 120);
-                if (firstQuestion.length > 120) notificationText += "...";
             }
         } 
+        // Pedido de permissão para outras ferramentas
         else if (notificationType === 'ToolPermission') {
-            notificationTitle = "Gemini: Permissão Necessária";
-            notificationText = `O Gemini solicita permissão para executar: ${data.tool_name || 'ferramenta'}`;
+            notificationTitle = "Gemini: Permissão";
+            notificationText = `Deseja executar ${toolName || 'ferramenta'}?`;
         }
         else {
             process.stdout.write(JSON.stringify({ decision: "allow" }));
@@ -58,6 +64,7 @@ process.stdin.on('end', () => {
             $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
             $xml.LoadXml($template)
             $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
+            # AppId oficial do PowerShell
             $appId = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe"
             [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show($toast)
         `;
