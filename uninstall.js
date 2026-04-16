@@ -15,6 +15,7 @@ const BACKUP_PATH = SETTINGS_PATH + '.bak';
 
 const FILES_TO_REMOVE = [
     'mark-start.ps1',
+    'mark-start.js',
     'windows-notify.js',
     'windows-ask-notify.js'
 ];

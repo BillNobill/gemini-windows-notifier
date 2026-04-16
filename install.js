@@ -14,6 +14,7 @@ const SETTINGS_PATH = path.join(GEMINI_DIR, 'settings.json');
 
 const SCRIPTS_TO_COPY = [
     'mark-start.ps1',
+    'mark-start.js',
     'windows-notify.js',
     'windows-ask-notify.js'
 ];
@@ -76,45 +77,49 @@ async function setup() {
 
     if (!settings.hooks) settings.hooks = {};
 
-    // Helper to add a hook if it doesn't exist (by name or command match)
-    const addHook = (event, name, type, command) => {
+    // Helper to add or update a hook
+    const updateHook = (event, name, type, command, timeout = 5000) => {
         if (!settings.hooks[event]) settings.hooks[event] = [];
         
-        // Flatten hooks to check for existence
-        const allHooks = settings.hooks[event].flatMap(h => h.hooks || []);
-        const exists = allHooks.some(h => h.name === name || h.command.includes(command.replace(/\\/g, '/')));
+        let hookGroup = settings.hooks[event].find(g => {
+            const h = g.hooks && g.hooks[0];
+            return h && (h.name === name || h.command.includes(name));
+        });
 
-        if (!exists) {
+        const newHookData = { name, type, command, timeout };
+        
+        // Add specific matchers for some events
+        let matcher = '.*';
+        if (event === 'BeforeTool' && name === 'ask-notifier') {
+            matcher = 'ask_user';
+        } else if (event === 'Notification') {
+            matcher = undefined; // Notification event doesn't use matcher
+        }
+
+        if (!hookGroup) {
             log(`Adding ${name} hook to ${event}...`);
-            // Standard structure for Gemini hooks
-            const hookEntry = {
-                hooks: [{
-                    name,
-                    type,
-                    command,
-                    timeout: 5000
-                }]
-            };
-
-            // BeforeTool and AfterTool often use matchers
-            if (event === 'BeforeTool' && name === 'ask-notifier') {
-                hookEntry.matcher = 'ask_user';
-            } else if (event === 'BeforeAgent' || event === 'AfterAgent') {
-                hookEntry.matcher = '.*';
-            }
-
-            settings.hooks[event].push(hookEntry);
+            const entry = { hooks: [newHookData] };
+            if (matcher) entry.matcher = matcher;
+            settings.hooks[event].push(entry);
             return true;
+        } else {
+            const existingHook = hookGroup.hooks[0];
+            if (existingHook.command !== command || existingHook.timeout !== timeout) {
+                log(`Updating existing ${name} hook in ${event}...`);
+                hookGroup.hooks[0] = newHookData;
+                if (matcher && !hookGroup.matcher) hookGroup.matcher = matcher;
+                return true;
+            }
         }
         return false;
     };
 
     const homeSub = os.homedir().replace(/\\/g, '/');
     const updated = [
-        addHook('BeforeAgent', 'start-timer', 'command', `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${homeSub}/.gemini/hooks/mark-start.ps1"`),
-        addHook('AfterAgent', 'windows-notifier', 'command', `node "${homeSub}/.gemini/hooks/windows-notify.js"`),
-        addHook('BeforeTool', 'ask-notifier', 'command', `node "${homeSub}/.gemini/hooks/windows-ask-notify.js"`),
-        addHook('Notification', 'permission-notifier', 'command', `node "${homeSub}/.gemini/hooks/windows-ask-notify.js"`)
+        updateHook('BeforeAgent', 'start-timer', 'command', `node "${homeSub}/.gemini/hooks/mark-start.js"`),
+        updateHook('AfterAgent', 'windows-notifier', 'command', `node "${homeSub}/.gemini/hooks/windows-notify.js"`),
+        updateHook('BeforeTool', 'ask-notifier', 'command', `node "${homeSub}/.gemini/hooks/windows-ask-notify.js"`),
+        updateHook('Notification', 'permission-notifier', 'command', `node "${homeSub}/.gemini/hooks/windows-ask-notify.js"`)
     ].some(v => v);
 
     if (updated) {
